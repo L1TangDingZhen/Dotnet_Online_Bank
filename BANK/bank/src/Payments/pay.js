@@ -2,6 +2,51 @@
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+function Loading() {
+    const styles = {
+        '@keyframes spin': {
+            '0%': { transform: 'rotate(0deg)' },
+            '100%': { transform: 'rotate(360deg)' }
+        },
+        overlay: {
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000,
+        },
+        spinner: {
+            width: '50px',
+            height: '50px',
+            border: '5px solid #f3f3f3',
+            borderTop: '5px solid #3498db',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+        },
+    };
+
+    return (
+        <div style={styles.overlay}>
+            <div style={{
+                ...styles.spinner,
+                animation: 'spin 1s linear infinite',
+            }}></div>
+            <style>{`
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            `}</style>
+        </div>
+    );
+}
+
+
 function Payments() {
     const [showAccountDetails, setShowAccountDetails] = useState(false);
     const [showDepositDetails, setShowDepositDetails] = useState(false);
@@ -15,12 +60,22 @@ function Payments() {
     const [depositAmount, setDepositAmount] = useState('');
     const [showDepositPinEntry, setShowDepositPinEntry] = useState(false);
     const [depositPin, setDepositPin] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [slideUp, setSlideUp] = useState(false);
+    const [slideLeft, setSlideLeft] = useState(false);
+    const [accountName, setAccountName] = useState('');
 
     const depositAmountRef = useRef(null);
     const navigate = useNavigate();
 
-    const isContinueEnabled = bsb.replace(/\s+/g, '').length === 6 && accountNumber.replace(/\s+/g, '').length === 9;
+    const isContinueEnabled = 
+        bsb.replace(/\s+/g, '').length === 6 && 
+        accountNumber.replace(/\s+/g, '').length === 9 && 
+        amount.length > 0;
 
+    const handleAccountNameChange = (e) => {
+        setAccountName(e.target.value);
+    };
 
     const handleBsbChange = (e) => {
         const formattedValue = e.target.value.replace(/\D/g, '').replace(/(\d{3})(?=\d)/g, '$1 ');
@@ -38,14 +93,19 @@ function Payments() {
 
     const handleContinueClick = () => {
         if (isContinueEnabled) {
-            setShowConfirmation(true);
-            setShowAccountDetails(false);
+            setSlideLeft(true);
+            setTimeout(() => {
+                setShowConfirmation(true);
+                setShowAccountDetails(false);
+                setSlideLeft(false);
+            }, 300);
         }
     };
 
     const handleConfirmClick = () => {
         setShowConfirmation(false);
         setAnimatePinEntry(true);
+        setPin(''); // 重置 PIN
         setTimeout(() => setShowPinEntry(true), 300);
     };
 
@@ -65,6 +125,7 @@ function Payments() {
 
     const handleCancel = () => {
         setAnimatePinEntry(false);
+        setPin(''); // 重置 PIN
         setTimeout(() => setShowPinEntry(false), 300);
     };
 
@@ -73,12 +134,15 @@ function Payments() {
     };
 
     const handlePayClick = async (enteredPin) => {
+        setIsLoading(true);
+        await new Promise(resolve => setTimeout(resolve, 3000));
         const token = localStorage.getItem('token');
         if (!token) {
             navigate('/login');
+            setIsLoading(false);
             return;
         }
-
+    
         try {
             const response = await axios.post(
                 'http://localhost:5128/api/TransferRequest/create',
@@ -94,7 +158,7 @@ function Payments() {
                     },
                 }
             );
-
+    
             if (response.status === 200) {
                 alert('Transfer request created successfully!');
                 // 重置所有状态
@@ -113,26 +177,31 @@ function Payments() {
             setPin(''); 
             setShowPinEntry(false);
             setAnimatePinEntry(false); 
+            setIsLoading(false);
         }
     };
+    
 
     function ConfirmationScreen() {
         return (
-            <div style={styles.confirmationContainer}>
-                <div style={styles.accountDetailsHeader}>
-                    <div style={styles.backButton} onClick={() => {
-                        setShowConfirmation(false);
-                        setShowAccountDetails(true);
-                    }}>←</div>
-                    <div style={styles.accountDetailsTitle}>Confirm Payment</div>
-                </div>
-                <div style={styles.confirmationDetails}>
-                    <p><strong>BSB:</strong> {bsb}</p>
-                    <p><strong>Account Number:</strong> {accountNumber}</p>
-                    <p><strong>Amount:</strong> ${amount}</p>
-                </div>
-                <div style={styles.continueButton} onClick={handleConfirmClick}>
-                    Confirm and Enter PIN
+            <div style={styles.overlay}>
+                <div style={styles.confirmationContainer}>
+                    <div style={styles.accountDetailsHeader}>
+                        <div style={styles.backButton} onClick={() => {
+                            setShowConfirmation(false);
+                            setShowAccountDetails(true);
+                        }}>←</div>
+                        <div style={styles.accountDetailsTitle}>Confirm Payment</div>
+                    </div>
+                    <div style={styles.confirmationDetails}>
+                        <p><strong>BSB:</strong> {bsb}</p>
+                        <p><strong>Account Number:</strong> {accountNumber}</p>
+                        <p><strong>Amount:</strong> ${amount}</p>
+                        <p><strong>Account Name:</strong> {accountName}</p>
+                    </div>
+                    <div style={styles.continueButton} onClick={handleConfirmClick}>
+                        Confirm and Enter PIN
+                    </div>
                 </div>
             </div>
         );
@@ -148,6 +217,7 @@ function Payments() {
 
     const handleDepositClick = () => {
         setShowDepositDetails(true);
+        setSlideUp(true);
         setShowAccountDetails(false);
         setShowPinEntry(false);
         setShowDepositPinEntry(false);
@@ -155,7 +225,14 @@ function Payments() {
             if (depositAmountRef.current) {
                 depositAmountRef.current.focus();
             }
-        }, 0);
+            setSlideUp(false);
+        }, 300);
+    };
+
+    const handleShowAccountDetails = () => {
+        setShowAccountDetails(true);
+        setSlideUp(true);
+        setTimeout(() => setSlideUp(false), 300);
     };
 
     const handleDepositContinue = () => {
@@ -191,12 +268,14 @@ function Payments() {
     };
 
     const handleDepositSubmit = async (enteredPin) => {
+        setIsLoading(true);
         const token = localStorage.getItem('token');
         if (!token) {
             navigate('/login');
+            setIsLoading(false);
             return;
         }
-
+    
         try {
             const response = await axios.post(
                 'http://localhost:5128/api/TransferRequest/deposit',
@@ -210,7 +289,7 @@ function Payments() {
                     },
                 }
             );
-
+    
             if (response.status === 200) {
                 alert('Deposit successful!');
                 setShowDepositPinEntry(false);
@@ -221,6 +300,8 @@ function Payments() {
         } catch (error) {
             console.error('Error during deposit:', error);
             alert('Failed to make deposit. Please try again.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -433,19 +514,27 @@ function Payments() {
             color: '#007bff',
             marginBottom: '5px',
         },
-        accountDetailsContainer: {
+        overlay: {
             position: 'fixed',
-            bottom: showAccountDetails || showDepositDetails ? '0' : '-100%',
+            top: 0,
             left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'flex-end',
+            zIndex: 1000,
+        },
+        accountDetailsContainer: {
+            backgroundColor: '#ffffff',
             width: '100%',
             height: '80%',
-            backgroundColor: '#fff',
             borderTopLeftRadius: '20px',
             borderTopRightRadius: '20px',
+            padding: '20px',
             boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.1)',
             transition: 'bottom 0.3s ease',
-            padding: '20px',
-            zIndex: 1000,
         },
         accountDepositContainer: {
             position: 'fixed',
@@ -518,23 +607,39 @@ function Payments() {
             marginRight: 'auto',
             display: 'block',
         },
+        slideUpAnimation: {
+            animation: 'slideUp 0.3s ease-out forwards',
+        },
+        slideLeftAnimation: {
+            animation: 'slideLeft 0.3s ease-out forwards',
+        },
     };
 
     function PinEntry() {
         const styles = {
+            overlay: {
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'flex-end',
+                zIndex: 1000,
+            },
             container: {
-                backgroundColor: '#dcdcdc',
+                backgroundColor: '#ffffff',
                 height: '60vh',
-                width: '100vw',
+                width: '100%',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
                 borderRadius: '20px 20px 0 0',
                 padding: '20px',
-                position: 'fixed',
-                bottom: animatePinEntry ? '0' : '-100%',
-                left: '0',
+                position: 'relative',
                 transition: 'bottom 0.3s ease',
             },
             header: {
@@ -547,13 +652,6 @@ function Payments() {
                 justifyContent: 'center',
                 marginBottom: '30px',
             },
-            dot: (isActive) => ({
-                width: '10px',
-                height: '10px',
-                borderRadius: '50%',
-                backgroundColor: isActive ? '#007bff' : '#000',
-                margin: '0 5px',
-            }),
             keypad: {
                 display: 'grid',
                 gridTemplateColumns: 'repeat(3, 1fr)',
@@ -565,14 +663,20 @@ function Payments() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: '#e0e0e0',
+                backgroundColor: '#f0f0f0',
                 borderRadius: '50%',
                 fontSize: '18px',
                 cursor: 'pointer',
-                transition: 'background-color 0.2s',
+                userSelect: 'none',
+                position: 'relative',
+                overflow: 'hidden',
             },
-            keyActive: {
-                backgroundColor: '#cccccc',
+            ripple: {
+                position: 'absolute',
+                borderRadius: '50%',
+                transform: 'scale(0)',
+                animation: 'ripple 0.6s linear',
+                backgroundColor: 'rgba(255, 255, 255, 0.7)',
             },
             footer: {
                 display: 'flex',
@@ -587,64 +691,112 @@ function Payments() {
                 textAlign: 'center',
                 width: '33%',
             },
+            dot: {
+                width: '10px',
+                height: '10px',
+                borderRadius: '50%',
+                backgroundColor: '#000',
+                margin: '0 5px',
+                transition: 'background-color 0.2s ease-in-out',
+            },
+            activeDot: {
+                backgroundColor: '#007bff',
+            },
         };
-
-        const [activeKey, setActiveKey] = useState(null);
-
-        const handleKeyClick = (num) => {
-            setActiveKey(num);
+    
+        const [ripples, setRipples] = useState([]);
+    
+        const createRipple = (event) => {
+            const button = event.currentTarget;
+            const circle = document.createElement('span');
+            const diameter = Math.max(button.clientWidth, button.clientHeight);
+            const radius = diameter / 2;
+    
+            circle.style.width = circle.style.height = `${diameter}px`;
+            circle.style.left = `${event.clientX - button.offsetLeft - radius}px`;
+            circle.style.top = `${event.clientY - button.offsetTop - radius}px`;
+            circle.classList.add('ripple');
+    
+            const ripple = button.getElementsByClassName('ripple')[0];
+    
+            if (ripple) {
+                ripple.remove();
+            }
+    
+            button.appendChild(circle);
+        };
+    
+        const handleKeyClick = (num, event) => {
+            createRipple(event);
             handlePinInput(num);
-            setTimeout(() => setActiveKey(null), 150);
         };
-
+    
         return (
-            <div style={styles.container}>
-                <div style={styles.header}>Enter Your Access PIN</div>
-                <div style={styles.pinDots}>
-                    {[...Array(6)].map((_, index) => (
-                        <div key={index} style={styles.dot(index < pin.length)}></div>
-                    ))}
-                </div>
-                <div style={styles.keypad}>
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-                        <div
-                            key={num}
-                            style={{
-                                ...styles.key,
-                                ...(activeKey === num ? styles.keyActive : {}),
-                            }}
-                            onClick={() => handleKeyClick(num)}
-                        >
-                            {num}
-                        </div>
-                    ))}
-                    <div style={{ gridColumn: '2 / 3' }}>
-                        <div
-                            style={{
-                                ...styles.key,
-                                ...(activeKey === 0 ? styles.keyActive : {}),
-                            }}
-                            onClick={() => handleKeyClick(0)}
-                        >
-                            0
+            <div style={styles.overlay}>
+                <div style={styles.container}>
+                    <style>{`
+                        @keyframes ripple {
+                            to {
+                                transform: scale(4);
+                                opacity: 0;
+                            }
+                        }
+                        .key {
+                            transition: background-color 0.3s ease;
+                        }
+                        .key:active {
+                            background-color: #e0e0e0;
+                        }
+                        .ripple {
+                            position: absolute;
+                            border-radius: 50%;
+                            transform: scale(0);
+                            animation: ripple 0.6s linear;
+                            background-color: rgba(255, 255, 255, 0.7);
+                        }
+                    `}</style>
+                    {isLoading && <Loading />}
+                    <div style={styles.header}>Enter Your Access PIN</div>
+                    <div style={styles.pinDots}>
+                        {[...Array(6)].map((_, index) => (
+                            <div 
+                                key={index} 
+                                style={{
+                                    ...styles.dot,
+                                    ...(index >= 6 - pin.length ? styles.activeDot : {})
+                                }}
+                            ></div>
+                        ))}
+                    </div>
+                    <div style={styles.keypad}>
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num) => (
+                            <div
+                                key={num}
+                                className="key"
+                                style={styles.key}
+                                onClick={(event) => handleKeyClick(num, event)}
+                            >
+                                {num}
+                            </div>
+                        ))}
+                        <div style={{ gridColumn: '3 / 4' }}>
+                            <div
+                                className="key"
+                                style={styles.key}
+                                onClick={(event) => {
+                                    createRipple(event);
+                                    handleDelete();
+                                }}
+                            >
+                                ⌫
+                            </div>
                         </div>
                     </div>
-                    <div style={{ gridColumn: '3 / 4' }}>
-                        <div
-                            style={{
-                                ...styles.key,
-                                ...(activeKey === 'delete' ? styles.keyActive : {}),
-                            }}
-                            onClick={handleDelete}
-                        >
-                            ⌫
-                        </div>
+                    <div style={styles.footer}>
+                        <div style={styles.footerButton}>Forgot PIN</div>
+                        <div style={{ width: '33%' }}></div>
+                        <div style={styles.footerButton} onClick={handleCancel}>Cancel</div>
                     </div>
-                </div>
-                <div style={styles.footer}>
-                    <div style={styles.footerButton}>Forgot PIN</div>
-                    <div style={{ width: '33%' }}></div>
-                    <div style={styles.footerButton} onClick={handleCancel}>Cancel</div>
                 </div>
             </div>
         );
@@ -730,6 +882,7 @@ function Payments() {
                 borderRadius: '50%',
                 backgroundColor: '#000',
                 margin: '0 5px',
+                transition: 'background-color 0.2s ease-in-out',
             },
             activeDot: {
                 backgroundColor: '#007bff',
@@ -749,10 +902,10 @@ function Payments() {
                 borderRadius: '50%',
                 fontSize: '18px',
                 cursor: 'pointer',
-                transition: 'background-color 0.2s',
+                transition: 'transform 0.1s ease-in-out',
             },
             keyActive: {
-                backgroundColor: '#cccccc',
+                transform: 'scale(0.9)',
             },
             footer: {
                 display: 'flex',
@@ -768,16 +921,15 @@ function Payments() {
                 width: '33%',
             },
         };
-
-        
+    
         const [activeKey, setActiveKey] = useState(null);
-
+    
         const handleKeyClick = (num) => {
             setActiveKey(num);
             handleDepositPinInput(num);
-            setTimeout(() => setActiveKey(null), 150);
+            setTimeout(() => setActiveKey(null), 100);
         };
-
+    
         return (
             <div style={styles.container}>
                 <div style={styles.header}>Enter Your Deposit PIN</div>
@@ -787,47 +939,40 @@ function Payments() {
                             key={index} 
                             style={{
                                 ...styles.dot,
-                                ...(index < depositPin.length ? styles.activeDot : {})
+                                ...(index >= 6 - depositPin.length ? styles.activeDot : {})
                             }}
                         ></div>
                     ))}
                 </div>
                 <div style={styles.keypad}>
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-                        <div
-                            key={num}
-                            style={{
-                                ...styles.key,
-                                ...(activeKey === num ? styles.keyActive : {}),
-                            }}
-                            onClick={() => handleKeyClick(num)}
-                        >
-                            {num}
-                        </div>
-                    ))}
-                    <div style={{ gridColumn: '2 / 3' }}>
-                        <div
-                            style={{
-                                ...styles.key,
-                                ...(activeKey === 0 ? styles.keyActive : {}),
-                            }}
-                            onClick={() => handleKeyClick(0)}
-                        >
-                            0
-                        </div>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num) => (
+                    <div
+                        key={num}
+                        style={{
+                            ...styles.key,
+                            ...(activeKey === num ? styles.keyActive : {}),
+                        }}
+                        onClick={() => handleKeyClick(num)}
+                    >
+                        {num}
                     </div>
-                    <div style={{ gridColumn: '3 / 4' }}>
-                        <div
-                            style={{
-                                ...styles.key,
-                                ...(activeKey === 'delete' ? styles.keyActive : {}),
-                            }}
-                            onClick={handleDepositPinDelete}
-                        >
-                            ⌫
-                        </div>
+                ))}
+                <div style={{ gridColumn: '3 / 4' }}>
+                    <div
+                        style={{
+                            ...styles.key,
+                            ...(activeKey === 'delete' ? styles.keyActive : {}),
+                        }}
+                        onClick={() => {
+                            setActiveKey('delete');
+                            handleDepositPinDelete();
+                            setTimeout(() => setActiveKey(null), 100);
+                        }}
+                    >
+                        ⌫
                     </div>
                 </div>
+            </div>
                 <div style={styles.footer}>
                     <div style={styles.footerButton}>Forgot PIN</div>
                     <div style={{ width: '33%' }}></div>
@@ -839,27 +984,42 @@ function Payments() {
 
     return (
         <div style={styles.container}>
+            <style>{`
+                @keyframes slideUp {
+                    from { transform: translateY(100%); }
+                    to { transform: translateY(0); }
+                }
+                @keyframes slideLeft {
+                    from { transform: translateX(0); }
+                    to { transform: translateX(-100%); }
+                }
+            `}</style>
+            {isLoading && <Loading />}
             <div style={styles.header}>
                 <div>👤</div>
                 <div style={styles.headerText}>Payments</div>
                 <div>🔍</div>
             </div>
-
+    
             <div style={styles.quickActionsContainer}>
-                <div style={styles.quickActionButton} onClick={() => setShowAccountDetails(true)}>💲 Pay</div>
+                <div style={styles.quickActionButton} onClick={handleShowAccountDetails}>💲 Pay</div>
                 <div style={styles.quickActionButton}>🔄 Transfer</div>
-                <div style={styles.quickActionButton} onClick={() => setShowDepositDetails(true)}>🏧 Deposit</div>
+                <div style={styles.quickActionButton} onClick={handleDepositClick}>🏧 Deposit</div>
             </div>
-
-            {showPinEntry ? (
-                <PinEntry />
-            ) : showAccountDetails ? (
-                <div style={styles.accountDetailsContainer}>
+    
+            {showPinEntry && <PinEntry />}
+            
+            {showAccountDetails && (
+                    <div style={{
+                        ...styles.accountDetailsContainer,
+                        ...(slideUp ? styles.slideUpAnimation : {}),
+                        ...(slideLeft ? styles.slideLeftAnimation : {})
+                    }}>
                     <div style={styles.accountDetailsHeader}>
                         <div style={styles.backButton} onClick={() => setShowAccountDetails(false)}>←</div>
                         <div style={styles.accountDetailsTitle}>Account Details</div>
                     </div>
-
+                    {/* 账户详情的其他内容 */}
                     <div style={styles.formGroup}>
                         <div style={styles.formLabel}>BSB</div>
                         <input type="text" style={styles.formInput} value={bsb} onChange={handleBsbChange} />
@@ -877,7 +1037,6 @@ function Payments() {
                         <input type="text" style={styles.formInput} />
                         <div style={styles.formNote}>Account name won't be matched, verified or checked with the BSB and account number.</div>
                     </div>
-
                     <div
                         style={styles.continueButton}
                         onClick={handleContinueClick}
@@ -885,17 +1044,24 @@ function Payments() {
                         Continue
                     </div>
                 </div>
-            ) : showConfirmation ? (
-                <ConfirmationScreen />
-            ) : showDepositDetails ? (
-                <DepositDetails 
-                    navigate={navigate} 
-                    setShowDepositDetails={setShowDepositDetails} 
-                />
-            ) : showDepositPinEntry ? (
-                <DepositPinEntry />
-            ) : null}
-
+            )}
+            
+            {showConfirmation && <ConfirmationScreen />}
+            
+            {showDepositDetails && (
+                <div style={{
+                    ...styles.depositDetailsContainer,
+                    ...(slideUp ? styles.slideUpAnimation : {})
+                }}>
+                    <DepositDetails 
+                        navigate={navigate} 
+                        setShowDepositDetails={setShowDepositDetails} 
+                    />
+                </div>
+            )}
+            
+            {showDepositPinEntry && <DepositPinEntry />}
+    
             <div style={styles.footer}>
                 <div style={styles.footerItem} onClick={() => handleFooterClick('/money')}>
                     <div style={styles.footerIcon}>💵</div>
