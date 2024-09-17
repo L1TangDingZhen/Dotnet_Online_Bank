@@ -35,13 +35,13 @@ function Home() {
     const styles = {
         container: {
             backgroundColor: '#ffffff',
-            padding: '2vw',
-            borderRadius: '1vw',
+            padding: '20px',
+            borderRadius: '10px',
             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-            width: '50vw',
-            maxWidth: '20vm',
+            width: '100%',
+            maxWidth: '400px',         // 限制最大宽度
             margin: 'auto',
-            textAlign: 'left',
+            textAlign: 'center',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -49,57 +49,51 @@ function Home() {
         },
         h1: {
             color: '#333333',
-            fontSize: '4vw',
-            marginBottom: '3vh',
-            textAlign: 'center',
+            fontSize: '2rem',
+            marginBottom: '20px',
         },
         form: {
             width: '100%',
             display: 'flex',
             flexDirection: 'column',
+            alignItems: 'center',
         },
         formGroup: {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '2vh',
+            marginBottom: '15px',
             width: '100%',
+            maxWidth: '350px',         // 控制输入框和按钮的最大宽度
         },
         label: {
             color: '#555555',
             fontWeight: 'bold',
-            marginRight: '1vw',
-            fontSize: '3vw',
-            flex: '0 0 25%',
-            marginLeft: '5%',
-            textAlign: 'right',
+            fontSize: '1rem',
+            flex: '0 0 25%',           // 缩小 label 的宽度
+            textAlign: 'left',         // 靠左对齐 label
         },
         input: {
-            padding: '1vw',
+            padding: '10px',
             border: '1px solid #dddddd',
-            borderRadius: '0.5vw',
-            fontSize: '3vw',
-            transition: 'border-color 0.3s ease',
-            width: 'calc(70% - 2vw)',
-            marginRight: '5%',
+            borderRadius: '5px',
+            fontSize: '1rem',
+            width: '70%',              // 增加 input 的宽度
             boxSizing: 'border-box',
-        },
-        inputFocus: {
-            borderColor: '#00539f',
-            outline: 'none',
         },
         button: {
             backgroundColor: '#00539f',
             color: 'white',
-            padding: '1.5vw',
+            padding: '12px',
             border: 'none',
-            borderRadius: '0.5vw',
+            borderRadius: '5px',
             cursor: 'pointer',
-            fontSize: '3vw',
+            fontSize: '1rem',
             transition: 'background-color 0.3s ease',
-            width: '100%',
+            width: '70%',
             textAlign: 'center',
-            marginBottom: '2vh',
+            marginBottom: '15px',
+            maxWidth: '350px',
         },
         buttonHover: {
             backgroundColor: '#004080',
@@ -107,12 +101,57 @@ function Home() {
         registerLink: {
             color: '#00539f',
             cursor: 'pointer',
-            fontSize: '2.5vw',
+            fontSize: '1rem',
             textAlign: 'center',
-            marginTop: '2vh',
+            marginTop: '15px',
             textDecoration: 'underline',
         },
     };
+    
+    return (
+        <div style={styles.container}>
+            <h1 style={styles.h1}>Login</h1>
+            <form onSubmit={handleSubmit} style={styles.form}>
+                <div style={styles.formGroup}>
+                    <label style={styles.label}>Username:</label>
+                    <input
+                        type="text"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        required
+                        style={styles.input}
+                    />
+                </div>
+                <div style={styles.formGroup}>
+                    <label style={styles.label}>Password:</label>
+                    <input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        style={styles.input}
+                    />
+                </div>
+                <button
+                    type="submit"
+                    style={styles.button}
+                    onMouseOver={(e) => (e.currentTarget.style.backgroundColor = styles.buttonHover.backgroundColor)}
+                    onMouseOut={(e) => (e.currentTarget.style.backgroundColor = styles.button.backgroundColor)}
+                >
+                    Login
+                </button>
+                <div
+                    style={styles.registerLink}
+                    onClick={handleRegister}
+                >
+                    Register
+                </div>
+            </form>
+        </div>
+    );
+    
+    
+
 
     return (
         <div style={styles.container}>

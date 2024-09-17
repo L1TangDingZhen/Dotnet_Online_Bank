@@ -56,14 +56,18 @@ function Payments() {
     const [accountNumber, setAccountNumber] = useState('');
     const [pin, setPin] = useState('');
     const [amount, setAmount] = useState('');
-    const [animatePinEntry, setAnimatePinEntry] = useState(false);
+    // const [animatePinEntry, setAnimatePinEntry] = useState(false);
     const [depositAmount, setDepositAmount] = useState('');
     const [showDepositPinEntry, setShowDepositPinEntry] = useState(false);
     const [depositPin, setDepositPin] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [slideUp, setSlideUp] = useState(false);
-    const [slideLeft, setSlideLeft] = useState(false);
+    // const [slideUp, setSlideUp] = useState(false);
+    // const [slideLeft, setSlideLeft] = useState(false);
     const [accountName, setAccountName] = useState('');
+
+    // const [isAccountSlidingUp, setIsAccountSlidingUp] = useState(false); // 控制Account的滑动
+    // const [isDepositSlidingUp, setIsDepositSlidingUp] = useState(false); // 控制Deposit的滑动
+
 
     const depositAmountRef = useRef(null);
     const navigate = useNavigate();
@@ -93,20 +97,15 @@ function Payments() {
 
     const handleContinueClick = () => {
         if (isContinueEnabled) {
-            setSlideLeft(true);
-            setTimeout(() => {
-                setShowConfirmation(true);
-                setShowAccountDetails(false);
-                setSlideLeft(false);
-            }, 300);
+            setShowAccountDetails(false);
+            setShowConfirmation(true);
         }
     };
 
     const handleConfirmClick = () => {
         setShowConfirmation(false);
-        setAnimatePinEntry(true);
         setPin(''); // 重置 PIN
-        setTimeout(() => setShowPinEntry(true), 300);
+        setShowPinEntry(true);
     };
 
     const handlePinInput = (num) => {
@@ -124,9 +123,8 @@ function Payments() {
     };
 
     const handleCancel = () => {
-        setAnimatePinEntry(false);
         setPin(''); // 重置 PIN
-        setTimeout(() => setShowPinEntry(false), 300);
+        setShowPinEntry(false);
     };
 
     const handleFooterClick = (path) => {
@@ -229,11 +227,38 @@ function Payments() {
         }, 300);
     };
 
+    // const handleShowAccountDetails = () => {
+    //     setShowAccountDetails(true);
+    //     setSlideUp(true);
+    //     setTimeout(() => setSlideUp(false), 300);
+    // };
+
     const handleShowAccountDetails = () => {
         setShowAccountDetails(true);
-        setSlideUp(true);
-        setTimeout(() => setSlideUp(false), 300);
+        document.body.style.overflow = 'hidden';
+
     };
+
+
+    ///
+    const handleHideAccountDetails = () => {
+        setShowAccountDetails(false);
+        document.body.style.overflow = '';
+
+    };
+    ///
+    const handleShowDepositDetails = () => {
+        setShowDepositDetails(true);
+        document.body.style.overflow = 'hidden';
+
+    };
+    ///
+    const handleHideDepositDetails = () => {
+        setShowDepositDetails(false);
+        document.body.style.overflow = '';
+
+    };
+
 
     const handleDepositContinue = () => {
         if (depositAmount && parseFloat(depositAmount) > 0) {
@@ -381,7 +406,7 @@ function Payments() {
 
         depositDetailsContainer: {
             position: 'fixed',
-            bottom: '0',
+            bottom: 0,
             left: 0,
             width: '100%',
             height: '80%',
@@ -389,10 +414,17 @@ function Payments() {
             borderTopLeftRadius: '20px',
             borderTopRightRadius: '20px',
             boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.1)',
-            transition: 'bottom 0.3s ease',
+            transition: 'transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)',
             padding: '20px',
             zIndex: 1000,
+            transform: 'translateY(100%)',
+            display: 'flex',
+            flexDirection: 'column',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            boxSizing: 'border-box',
         },
+
         headerText: {
             fontSize: '24px',
             fontWeight: 'bold',
@@ -527,14 +559,22 @@ function Payments() {
             zIndex: 1000,
         },
         accountDetailsContainer: {
-            backgroundColor: '#ffffff',
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
             width: '100%',
             height: '80%',
+            backgroundColor: '#fff',
             borderTopLeftRadius: '20px',
             borderTopRightRadius: '20px',
-            padding: '20px',
             boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.1)',
-            transition: 'bottom 0.3s ease',
+            transition: 'transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)',
+            padding: '20px',
+            zIndex: 1000,
+            transform: 'translateY(100%)',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            boxSizing: 'border-box',
         },
         accountDepositContainer: {
             position: 'fixed',
@@ -581,7 +621,8 @@ function Payments() {
             fontWeight: 'bold',
         },
         formInput: {
-            width: 'calc(100% - 40px)',
+            width: '100%',
+            maxWidth: '1000px', 
             padding: '10px',
             fontSize: '16px',
             borderRadius: '5px',
@@ -821,29 +862,42 @@ function Payments() {
             backgroundColor: isAmountValid ? '#007bff' : '#e0e0e0',
             color: isAmountValid ? '#fff' : '#999',
             cursor: isAmountValid ? 'pointer' : 'not-allowed',
+            width: '100%',
+            maxWidth: '300px',
+            marginTop: '20px',
         };
     
         return (
-            <div style={styles.depositDetailsContainer}>
+            <div style={{
+                ...styles.depositDetailsContainer, 
+                transform: 'none',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                padding: '20px',
+                boxSizing: 'border-box',
+            }}>
                 <div style={styles.accountDetailsHeader}>
                     <div style={styles.backButton} onClick={handleExit}>←</div>
                     <div style={styles.accountDetailsTitle}>Deposit Amount</div>
                 </div>
-                <div style={styles.formGroup}>
+                <div style={{...styles.formGroup, width: '100%'}}>
                     <div style={styles.formLabel}>Amount</div>
                     <input 
                         type="text" 
-                        style={styles.formInput} 
+                        style={styles.formInput}
                         value={depositAmount} 
                         onChange={handleDepositAmountChange} 
                         ref={depositAmountRef}
                     />
                 </div>
-                <div
-                    style={buttonStyle}
-                    onClick={isAmountValid ? handleDepositContinue : undefined}
-                >
-                    Continue
+                <div style={{display: 'flex', justifyContent: 'center', width: '100%'}}>
+                    <div
+                        style={buttonStyle}
+                        onClick={isAmountValid ? handleDepositContinue : undefined}
+                    >
+                        Continue
+                    </div>
                 </div>
             </div>
         );
@@ -984,16 +1038,41 @@ function Payments() {
 
     return (
         <div style={styles.container}>
-            <style>{`
-                @keyframes slideUp {
-                    from { transform: translateY(100%); }
-                    to { transform: translateY(0); }
-                }
-                @keyframes slideLeft {
-                    from { transform: translateX(0); }
-                    to { transform: translateX(-100%); }
-                }
-            `}</style>
+        <style>{`
+            .slideUp {
+                transform: translateY(0) !important;
+            }
+            .accountDetailsContainer, .depositDetailsContainer {
+                transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1) !important;
+                border-top-left-radius: 20px !important;
+                border-top-right-radius: 20px !important;
+            }
+            .overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                pointer-events: none;
+                z-index: 999;
+            }
+            .overlay.active {
+                opacity: 1;
+                pointer-events: auto;
+            }
+        `}</style>
+
+            <div 
+                className={`overlay ${showAccountDetails || showDepositDetails ? 'active' : ''}`} 
+                onClick={() => {
+                    handleHideAccountDetails();
+                    handleHideDepositDetails();
+                }}
+            ></div>
+
             {isLoading && <Loading />}
             <div style={styles.header}>
                 <div>👤</div>
@@ -1004,19 +1083,17 @@ function Payments() {
             <div style={styles.quickActionsContainer}>
                 <div style={styles.quickActionButton} onClick={handleShowAccountDetails}>💲 Pay</div>
                 <div style={styles.quickActionButton}>🔄 Transfer</div>
-                <div style={styles.quickActionButton} onClick={handleDepositClick}>🏧 Deposit</div>
+                <div style={styles.quickActionButton} onClick={handleShowDepositDetails}>🏧 Deposit</div>
             </div>
     
             {showPinEntry && <PinEntry />}
             
             {showAccountDetails && (
-                    <div style={{
-                        ...styles.accountDetailsContainer,
-                        ...(slideUp ? styles.slideUpAnimation : {}),
-                        ...(slideLeft ? styles.slideLeftAnimation : {})
-                    }}>
-                    <div style={styles.accountDetailsHeader}>
-                        <div style={styles.backButton} onClick={() => setShowAccountDetails(false)}>←</div>
+                <div 
+                    className={`accountDetailsContainer ${showAccountDetails ? 'slideUp' : ''}`} 
+                    style={styles.accountDetailsContainer}
+                >                    <div style={styles.accountDetailsHeader}>
+                        <div style={styles.backButton} onClick={handleHideAccountDetails}>←</div>
                         <div style={styles.accountDetailsTitle}>Account Details</div>
                     </div>
                     {/* 账户详情的其他内容 */}
@@ -1034,7 +1111,7 @@ function Payments() {
                     </div>
                     <div style={styles.formGroup}>
                         <div style={styles.formLabel}>Account Name</div>
-                        <input type="text" style={styles.formInput} />
+                        <input type="text" style={styles.formInput} value={accountName} onChange={handleAccountNameChange} />
                         <div style={styles.formNote}>Account name won't be matched, verified or checked with the BSB and account number.</div>
                     </div>
                     <div
@@ -1049,10 +1126,10 @@ function Payments() {
             {showConfirmation && <ConfirmationScreen />}
             
             {showDepositDetails && (
-                <div style={{
-                    ...styles.depositDetailsContainer,
-                    ...(slideUp ? styles.slideUpAnimation : {})
-                }}>
+                <div 
+                    className={`depositDetailsContainer ${showDepositDetails ? 'slideUp' : ''}`} 
+                    style={styles.depositDetailsContainer}
+                >
                     <DepositDetails 
                         navigate={navigate} 
                         setShowDepositDetails={setShowDepositDetails} 
@@ -1071,11 +1148,11 @@ function Payments() {
                     <div style={styles.footerIcon}>💳</div>
                     <div style={styles.footerText}>Payments</div>
                 </div>
-                <div style={styles.footerItem} onClick={() => handleFooterClick('/card')}>
+                <div style={styles.footerItem} onClick={() => handleFooterClick('/payments')}>
                     <div style={styles.footerIcon}>💳</div>
                     <div style={styles.footerText}>Card</div>
                 </div>
-                <div style={styles.footerItem} onClick={() => handleFooterClick('/support')}>
+                <div style={styles.footerItem} onClick={() => handleFooterClick('/payments')}>
                     <div style={styles.footerIcon}>📞</div>
                     <div style={styles.footerText}>Support</div>
                 </div>
