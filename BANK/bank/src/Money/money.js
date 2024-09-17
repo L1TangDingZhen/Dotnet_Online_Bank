@@ -227,11 +227,11 @@ function Dashboard() {
                     <div style={styles.footerIcon}>💳</div>
                     <div style={styles.footerText}>Payments</div>
                 </div>
-                <div style={styles.footerItem} onClick={() => handleFooterClick('/card')}>
+                <div style={styles.footerItem} onClick={() => handleFooterClick('/payments')}>
                     <div style={styles.footerIcon}>💳</div>
                     <div style={styles.footerText}>Card</div>
                 </div>
-                <div style={styles.footerItem} onClick={() => handleFooterClick('/support')}>
+                <div style={styles.footerItem} onClick={() => handleFooterClick('/payments')}>
                     <div style={styles.footerIcon}>📞</div>
                     <div style={styles.footerText}>Support</div>
                 </div>
