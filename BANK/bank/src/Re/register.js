@@ -5,11 +5,21 @@ import { useNavigate } from 'react-router-dom'; // 引入 useNavigate
 function Register() {
     const [name, setName] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState(''); // 新增确认密码的状态
     const [pin, setPin] = useState('');
+    const [passwordMismatch, setPasswordMismatch] = useState(false); // 用于显示密码不一致的提示
     const navigate = useNavigate(); // 初始化 useNavigate
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // 检查两次密码是否一致
+        if (password !== confirmPassword) {
+            setPasswordMismatch(true);
+            return;
+        }
+
+        setPasswordMismatch(false);
 
         try {
             const response = await axios.post('http://localhost:5128/api/Account/register', {
@@ -29,11 +39,11 @@ function Register() {
     const styles = {
         container: {
             backgroundColor: '#ffffff',
-            padding: '2vw',
-            borderRadius: '1vw',
+            padding: '20px',
+            borderRadius: '10px',
             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-            width: '50vw',
-            maxWidth: '20vm',
+            width: '100%',
+            maxWidth: '400px',  // 最大宽度设置为400px
             margin: 'auto',
             textAlign: 'left',
             display: 'flex',
@@ -43,8 +53,8 @@ function Register() {
         },
         h1: {
             color: '#333333',
-            fontSize: '4vw',
-            marginBottom: '3vh',
+            fontSize: '2rem', // 使用rem来设置字体大小
+            marginBottom: '20px',
             textAlign: 'center',
         },
         form: {
@@ -56,46 +66,46 @@ function Register() {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '2vh',
+            marginBottom: '15px',
             width: '100%',
         },
         label: {
             color: '#555555',
             fontWeight: 'bold',
-            marginRight: '1vw',
-            fontSize: '3vw',
-            flex: '0 0 25%',
-            marginLeft: '5%',
+            fontSize: '1rem',
+            flex: '0 0 28%',  // 将标签的宽度从30%调整为28%，向左靠齐
             textAlign: 'right',
         },
         input: {
-            padding: '1vw',
+            padding: '10px',
             border: '1px solid #dddddd',
-            borderRadius: '0.5vw',
-            fontSize: '3vw',
-            transition: 'border-color 0.3s ease',
-            width: 'calc(70% - 2vw)',
-            marginRight: '5%',
+            borderRadius: '5px',
+            fontSize: '1rem',
+            width: '67%',  // 输入框占用67%宽度，保持与label的整体对齐
             boxSizing: 'border-box',
-        },
-        inputFocus: {
-            borderColor: '#00539f',
-            outline: 'none',
         },
         button: {
             backgroundColor: '#00539f',
             color: 'white',
-            padding: '1.5vw',
+            padding: '12px',
             border: 'none',
-            borderRadius: '0.5vw',
+            borderRadius: '5px',
             cursor: 'pointer',
-            fontSize: '3vw',
+            fontSize: '1rem',
             transition: 'background-color 0.3s ease',
             width: '100%',
             textAlign: 'center',
+            marginBottom: '15px',
         },
         buttonHover: {
             backgroundColor: '#004080',
+        },
+        errorText: {
+            color: 'red',
+            fontSize: '0.9rem',
+            marginTop: '-10px',
+            marginBottom: '10px',
+            textAlign: 'center',
         },
     };
 
@@ -123,6 +133,19 @@ function Register() {
                         style={styles.input}
                     />
                 </div>
+                <div style={styles.formGroup}>
+                    <label style={styles.label}>Confirm Password:</label>
+                    <input
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        style={styles.input}
+                    />
+                </div>
+                {passwordMismatch && (
+                    <div style={styles.errorText}>Passwords do not match</div>
+                )}
                 <div style={styles.formGroup}>
                     <label style={styles.label}>Transaction PIN:</label>
                     <input
